@@ -42,6 +42,10 @@ router.post("/login", async (req, res) => {
       }
       res.send("Login Successfully");
     }
+    else {
+        res.send("Invalid Credentials")
+        return
+    }
   } catch (err) {
     res.send("Error");
   }
