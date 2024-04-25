@@ -3,6 +3,7 @@ const signupModel = require("../model/signupModel");
 const router = express.Router();
 const genPassword = require("../helper.js");
 const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
 
 router.post("/creating-users", async (req, res) => {
   try {
@@ -10,22 +11,22 @@ router.post("/creating-users", async (req, res) => {
 
     const userExists = await signupModel.findOne({ email: email });
     if (userExists) {
-      res.send("User Already Exists");
+      res.send({ message: "User Already Exists", token: token });
       return;
     }
-        const hashedPassword = await genPassword(password);
-        let newUser = new signupModel({
-          password: hashedPassword,
-          email,
-          mobile,
-          name,
-        });
-    
-        await newUser.save();
-        res.send("User Created Successfully");
-        
+    const hashedPassword = await genPassword(password);
+    let newUser = new signupModel({
+      password: hashedPassword,
+      email,
+      mobile,
+      name,
+    });
+
+    await newUser.save();
+    const token = jwt.sign({ email: email }, process.env.SECRET_KEY);
+    res.send({ message: "User Created Successfully", token: token });
   } catch (err) {
-    res.send("Error");
+    res.send({ message: "Error" });
   }
 });
 
@@ -37,17 +38,17 @@ router.post("/login", async (req, res) => {
       const storedDbPassword = loginUser.password;
       const isPasswordMatch = await bcrypt.compare(password, storedDbPassword);
       if (!isPasswordMatch) {
-        res.send("Invalid Credentials");
+        res.send({ message: "Invalid Credentials" });
         return;
       }
-      res.send("Login Successfully");
-    }
-    else {
-        res.send("Invalid Credentials")
-        return
+      const token = jwt.sign({ id: loginUser._id }, process.env.SECRET_KEY);
+      res.send({ message: "Login Successfully", token: token });
+    } else {
+      res.send({ message: "Invalid Credentials" });
+      return;
     }
   } catch (err) {
-    res.send("Error");
+    res.send({ message: "Error" });
   }
 });
 
